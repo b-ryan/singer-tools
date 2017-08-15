@@ -3,9 +3,7 @@
 import json
 import sys
 
-OBSERVED_TYPES = {}
-
-def add_observation(path):
+def add_observation(observed_types, path):
 
     node = OBSERVED_TYPES
     for i in range(0, len(path) - 1):
@@ -16,21 +14,21 @@ def add_observation(path):
 
     node[path[-1]] = True
 
-def add_observations(path, data):
+def add_observations(observed_types, path, data):
     if isinstance(data, dict):
         for key in data:
-            add_observations(path + ["object", key], data[key])
+            add_observations(observed_types, path + ["object", key], data[key])
     elif isinstance(data, list):
         for item in data:
-            add_observations(path + ["array"], item)
+            add_observations(observed_types, path + ["array"], item)
     elif isinstance(data, str):
-        add_observation(path + ["string"])
+        add_observation(observed_types, path + ["string"])
     elif isinstance(data, int):
-        add_observation(path + ["integer"])
+        add_observation(observed_types, path + ["integer"])
     elif isinstance(data, float):
-        add_observation(path + ["number"])
+        add_observation(observed_types, path + ["number"])
     elif data is None:
-        add_observation(path + ["null"])
+        add_observation(observed_types, path + ["null"])
     else:
         raise Exception("Unexpected value " + repr(data) + " at path " + repr(path))
 
@@ -69,9 +67,9 @@ def to_json_schema(obs):
 
 
 def main():
+    observed_types = {}
     for line in sys.stdin:
         rec = json.loads(line)
         if rec['type'] == 'RECORD':
-            add_observations([], rec['record'])
-
-    print(json.dumps(to_json_schema(OBSERVED_TYPES), indent=2))
+            add_observations(observed_types, [], rec['record'])
+    print(json.dumps(to_json_schema(observed_types), indent=2))
