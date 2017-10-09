@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-
 import json
 import sys
+import argparse
 
 OBSERVED_TYPES = {}
 
@@ -43,6 +43,7 @@ def to_json_schema(obs):
 
         if key == 'object':
             result['type'] += ['object']
+            result['additionalProperties'] = False
             if 'properties' not in result:
                 result['properties'] = {}
                 for obj_key in obs['object']:
@@ -74,9 +75,15 @@ def to_json_schema(obs):
 
 
 def main():
-    for line in sys.stdin:
-        rec = json.loads(line)
-        if rec['type'] == 'RECORD':
-            add_observations([], rec['record'])
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--json-file", type=argparse.FileType("r"))
+    args = parser.parse_args()
+    if args.json_file:
+        rec = json.load(args.json_file)
+        add_observations([], rec)
+    else:
+        for line in sys.stdin:
+            rec = json.loads(line)
+            if rec['type'] == 'RECORD':
+                add_observations([], rec['record'])
     print(json.dumps(to_json_schema(OBSERVED_TYPES), indent=2))
